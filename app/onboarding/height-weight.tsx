@@ -1,18 +1,25 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { useOnboarding } from '../../lib/OnboardingContext';
 
 export default function HeightWeightScreen() {
   const router = useRouter();
+  const { setData } = useOnboarding();
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
 
   const isComplete = height && weight;
 
+  function handleContinue() {
+    if (!isComplete) return;
+    setData({ height, weight });
+    router.push('/onboarding/activity');
+  }
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
-
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
@@ -47,14 +54,13 @@ export default function HeightWeightScreen() {
         <View style={styles.bottom}>
           <TouchableOpacity
             style={[styles.continueButton, !isComplete && styles.buttonDisabled]}
-            onPress={() => isComplete && router.push('/onboarding/activity')}
+            onPress={handleContinue}
           >
             <Text style={styles.continueText}>CONTINUE</Text>
           </TouchableOpacity>
 
           <Text style={styles.footer}>Your data is private and only used to personalize your experience</Text>
         </View>
-
       </View>
     </TouchableWithoutFeedback>
   );

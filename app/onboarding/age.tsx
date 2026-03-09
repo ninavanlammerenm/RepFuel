@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useOnboarding } from '../../lib/OnboardingContext';
 
 const days = Array.from({ length: 31 }, (_, i) => i + 1);
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -8,15 +9,21 @@ const years = Array.from({ length: 80 }, (_, i) => 2007 - i);
 
 export default function AgeScreen() {
   const router = useRouter();
+  const { setData } = useOnboarding();
   const [day, setDay] = useState<number | null>(null);
   const [month, setMonth] = useState<string | null>(null);
   const [year, setYear] = useState<number | null>(null);
 
   const isComplete = day && month && year;
 
+  function handleContinue() {
+    if (!isComplete) return;
+    setData({ birthDate: `${day} ${month} ${year}` });
+    router.push('/onboarding/height-weight');
+  }
+
   return (
     <View style={styles.container}>
-
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <Text style={styles.backText}>← Back</Text>
       </TouchableOpacity>
@@ -26,7 +33,6 @@ export default function AgeScreen() {
         <Text style={styles.subtitle}>We use this to calculate your calories and daily targets.</Text>
 
         <View style={styles.pickerRow}>
-
           <View style={styles.pickerColumn}>
             <Text style={styles.pickerLabel}>Day</Text>
             <ScrollView style={styles.picker} showsVerticalScrollIndicator={false}>
@@ -36,9 +42,7 @@ export default function AgeScreen() {
                   style={[styles.pickerItem, day === d && styles.pickerItemSelected]}
                   onPress={() => setDay(d)}
                 >
-                  <Text style={[styles.pickerText, day === d && styles.pickerTextSelected]}>
-                    {d}
-                  </Text>
+                  <Text style={[styles.pickerText, day === d && styles.pickerTextSelected]}>{d}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -53,9 +57,7 @@ export default function AgeScreen() {
                   style={[styles.pickerItem, month === m && styles.pickerItemSelected]}
                   onPress={() => setMonth(m)}
                 >
-                  <Text style={[styles.pickerText, month === m && styles.pickerTextSelected]}>
-                    {m}
-                  </Text>
+                  <Text style={[styles.pickerText, month === m && styles.pickerTextSelected]}>{m}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -70,28 +72,24 @@ export default function AgeScreen() {
                   style={[styles.pickerItem, year === y && styles.pickerItemSelected]}
                   onPress={() => setYear(y)}
                 >
-                  <Text style={[styles.pickerText, year === y && styles.pickerTextSelected]}>
-                    {y}
-                  </Text>
+                  <Text style={[styles.pickerText, year === y && styles.pickerTextSelected]}>{y}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
           </View>
-
         </View>
       </View>
 
       <View style={styles.bottom}>
         <TouchableOpacity
           style={[styles.continueButton, !isComplete && styles.buttonDisabled]}
-          onPress={() => isComplete && router.push('/onboarding/height-weight')}
+          onPress={handleContinue}
         >
           <Text style={styles.continueText}>CONTINUE</Text>
         </TouchableOpacity>
 
         <Text style={styles.footer}>Your data is private and only used to personalize your experience</Text>
       </View>
-
     </View>
   );
 }

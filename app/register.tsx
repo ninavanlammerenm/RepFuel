@@ -1,12 +1,39 @@
 import { useRouter } from 'expo-router';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { supabase } from '../lib/supabase';
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function handleRegister() {
+    if (!name || !email || !password || !confirmPassword) {
+      Alert.alert('Vul alle velden in');
+      return;
+    }
+    if (password !== confirmPassword) {
+      Alert.alert('Wachtwoorden komen niet overeen');
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase.auth.signUp({ email, password });
+    setLoading(false);
+
+    if (error) {
+      Alert.alert('Fout', error.message);
+    } else {
+      router.push('/onboarding/welcome');
+    }
+  }
 
   return (
     <View style={styles.container}>
-
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <Text style={styles.backText}>← Back</Text>
       </TouchableOpacity>
@@ -18,34 +45,43 @@ export default function RegisterScreen() {
         style={styles.input}
         placeholder="Full name"
         placeholderTextColor="#9CA3AF"
+        value={name}
+        onChangeText={setName}
       />
-
       <TextInput
         style={styles.input}
         placeholder="Email address"
         placeholderTextColor="#9CA3AF"
         keyboardType="email-address"
+        value={email}
+        onChangeText={setEmail}
+        autoCapitalize="none"
       />
-
       <TextInput
         style={styles.input}
         placeholder="Password"
         placeholderTextColor="#9CA3AF"
         secureTextEntry
+        value={password}
+        onChangeText={setPassword}
       />
-
       <TextInput
         style={styles.input}
         placeholder="Confirm password"
         placeholderTextColor="#9CA3AF"
         secureTextEntry
+        value={confirmPassword}
+        onChangeText={setConfirmPassword}
       />
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => router.push('/onboarding/welcome')}
+        onPress={handleRegister}
+        disabled={loading}
       >
-        <Text style={styles.buttonText}>Create account</Text>
+        <Text style={styles.buttonText}>
+          {loading ? 'Loading...' : 'Create account'}
+        </Text>
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => router.push('/login')}>
@@ -53,7 +89,6 @@ export default function RegisterScreen() {
           Already have an account? <Text style={styles.loginLink}>Log in</Text>
         </Text>
       </TouchableOpacity>
-
     </View>
   );
 }

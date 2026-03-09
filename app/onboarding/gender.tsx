@@ -1,16 +1,23 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useOnboarding } from '../../lib/OnboardingContext';
 
 export default function GenderScreen() {
   const router = useRouter();
+  const { setData } = useOnboarding();
   const [selected, setSelected] = useState<string | null>(null);
 
   const options = ['Male', 'Female', 'Other'];
 
+  function handleContinue() {
+    if (!selected) return;
+    setData({ gender: selected });
+    router.push('/onboarding/age');
+  }
+
   return (
     <View style={styles.container}>
-
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <Text style={styles.backText}>← Back</Text>
       </TouchableOpacity>
@@ -33,14 +40,13 @@ export default function GenderScreen() {
       <View style={styles.bottom}>
         <TouchableOpacity
           style={[styles.continueButton, !selected && styles.buttonDisabled]}
-          onPress={() => selected && router.push('/onboarding/age')}
+          onPress={handleContinue}
         >
           <Text style={styles.continueText}>CONTINUE</Text>
         </TouchableOpacity>
 
         <Text style={styles.footer}>Your data is private and only used to personalize your experience</Text>
       </View>
-
     </View>
   );
 }

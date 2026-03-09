@@ -1,9 +1,5 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
-import { Text } from 'react-native';
-
-function Icon({ emoji }: { emoji: string }) {
-  return <Text style={{ fontSize: 20 }}>{emoji}</Text>;
-}
 
 export default function TabLayout() {
   return (
@@ -24,14 +20,15 @@ export default function TabLayout() {
           fontSize: 11,
           fontWeight: 'bold',
         },
+        animation: 'fade',
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ focused }) => (
-            <Icon emoji={focused ? '🏠' : '🏠'} />
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home-outline" color={color} size={size} />
           ),
         }}
       />
@@ -39,8 +36,8 @@ export default function TabLayout() {
         name="workouts"
         options={{
           title: 'Workouts',
-          tabBarIcon: ({ focused }) => (
-            <Icon emoji={focused ? '💪' : '💪'} />
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="barbell-outline" color={color} size={size} />
           ),
         }}
       />
@@ -48,8 +45,8 @@ export default function TabLayout() {
         name="nutrition"
         options={{
           title: 'Nutrition',
-          tabBarIcon: ({ focused }) => (
-            <Icon emoji={focused ? '🥗' : '🥗'} />
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="nutrition-outline" color={color} size={size} />
           ),
         }}
       />
@@ -57,8 +54,8 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ focused }) => (
-            <Icon emoji={focused ? '👤' : '👤'} />
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person-outline" color={color} size={size} />
           ),
         }}
       />

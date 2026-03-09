@@ -1,10 +1,10 @@
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-const recentWorkouts = [
-  { id: '1', name: 'Push Day', date: 'Monday', exercises: 5, duration: '45 min' },
-  { id: '2', name: 'Pull Day', date: 'Wednesday', exercises: 6, duration: '50 min' },
-  { id: '3', name: 'Leg Day', date: 'Friday', exercises: 6, duration: '55 min' },
+const routines = [
+  { id: '1', name: 'Push Day', exercises: 5 },
+  { id: '2', name: 'Pull Day', exercises: 6 },
+  { id: '3', name: 'Leg Day', exercises: 6 },
 ];
 
 const personalRecords = [
@@ -22,17 +22,29 @@ export default function WorkoutsScreen() {
 
         <Text style={styles.title}>Workouts</Text>
 
-        <TouchableOpacity style={styles.startButton}>
-          <Text style={styles.startButtonText}>+ Start workout</Text>
-        </TouchableOpacity>
+        <View style={styles.buttonRow}>
+          <TouchableOpacity
+            style={styles.startButton}
+            onPress={() => router.push('/workouts/active-workout')}
+          >
+            <Text style={styles.startButtonText}>▶ Start workout</Text>
+          </TouchableOpacity>
 
-        <Text style={styles.sectionTitle}>Recent workouts</Text>
+          <TouchableOpacity
+            style={styles.routineButton}
+            onPress={() => router.push('/workouts/create-routine')}
+          >
+            <Text style={styles.routineButtonText}>+ Create routine</Text>
+          </TouchableOpacity>
+        </View>
 
-        {recentWorkouts.map((workout) => (
-          <TouchableOpacity key={workout.id} style={styles.workoutCard}>
-            <View style={styles.workoutLeft}>
-              <Text style={styles.workoutName}>{workout.name}</Text>
-              <Text style={styles.workoutMeta}>{workout.date} · {workout.exercises} exercises · {workout.duration}</Text>
+        <Text style={styles.sectionTitle}>My routines</Text>
+
+        {routines.map((routine) => (
+          <TouchableOpacity key={routine.id} style={styles.card}>
+            <View>
+              <Text style={styles.cardName}>{routine.name}</Text>
+              <Text style={styles.cardMeta}>{routine.exercises} exercises</Text>
             </View>
             <Text style={styles.arrow}>→</Text>
           </TouchableOpacity>
@@ -68,18 +80,34 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     marginBottom: 24,
   },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 32,
+  },
   startButton: {
+    flex: 1,
     backgroundColor: '#22C55E',
     paddingVertical: 16,
     borderRadius: 14,
     alignItems: 'center',
-    marginBottom: 32,
   },
   startButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
-    letterSpacing: 1,
+  },
+  routineButton: {
+    flex: 1,
+    backgroundColor: '#374151',
+    paddingVertical: 16,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  routineButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: 'bold',
   },
   sectionTitle: {
     fontSize: 18,
@@ -87,7 +115,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     marginBottom: 12,
   },
-  workoutCard: {
+  card: {
     backgroundColor: '#1F2937',
     borderRadius: 14,
     padding: 16,
@@ -96,23 +124,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  workoutLeft: {
-    flex: 1,
-  },
-  workoutName: {
+  cardName: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginBottom: 4,
   },
-  workoutMeta: {
+  cardMeta: {
     fontSize: 13,
     color: '#9CA3AF',
   },
   arrow: {
     color: '#22C55E',
     fontSize: 18,
-    marginLeft: 12,
   },
   prCard: {
     backgroundColor: '#1F2937',

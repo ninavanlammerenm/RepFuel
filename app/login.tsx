@@ -1,11 +1,15 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Animated, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { supabase } from '../lib/supabase';
 
 export default function LoginScreen() {
   const router = useRouter();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     Animated.parallel([
@@ -22,15 +26,30 @@ export default function LoginScreen() {
     ]).start();
   }, []);
 
+  async function handleLogin() {
+    if (!email || !password) {
+      Alert.alert('Vul alle velden in');
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
+
+    if (error) {
+      Alert.alert('Fout', error.message);
+    } else {
+      router.replace('/(tabs)');
+    }
+  }
+
   return (
     <View style={styles.container}>
-
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <Text style={styles.backText}>← Back</Text>
       </TouchableOpacity>
 
       <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }], width: '100%', alignItems: 'center' }}>
-
         <Text style={styles.title}>Welcome back</Text>
         <Text style={styles.subtitle}>Log in to your account</Text>
 
@@ -39,6 +58,9 @@ export default function LoginScreen() {
           placeholder="Email address"
           placeholderTextColor="#9CA3AF"
           keyboardType="email-address"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
         />
 
         <TextInput
@@ -46,18 +68,24 @@ export default function LoginScreen() {
           placeholder="Password"
           placeholderTextColor="#9CA3AF"
           secureTextEntry
+          value={password}
+          onChangeText={setPassword}
         />
 
         <TouchableOpacity>
           <Text style={styles.forgotPassword}>Forgot password?</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Log in</Text>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleLogin}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>
+            {loading ? 'Loading...' : 'Log in'}
+          </Text>
         </TouchableOpacity>
-
       </Animated.View>
-
     </View>
   );
 }
@@ -110,6 +138,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 60,
     borderRadius: 30,
     marginTop: 8,
+    width: '100%',
+    alignItems: 'center',
   },
   buttonText: {
     color: '#FFFFFF',

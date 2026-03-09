@@ -1,42 +1,54 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useOnboarding } from '../../lib/OnboardingContext';
 
 const levels = [
   {
     id: 'sedentary',
     title: 'Sedentary',
     description: 'Little or no exercise. Mostly sitting during the day.',
+    factor: 1.2,
   },
   {
     id: 'light',
     title: 'Lightly active',
     description: 'Light exercise 1–3 days per week.',
+    factor: 1.375,
   },
   {
     id: 'moderate',
     title: 'Moderately active',
     description: 'Moderate exercise 3–5 days per week.',
+    factor: 1.55,
   },
   {
     id: 'active',
     title: 'Very active',
     description: 'Hard exercise 6–7 days per week.',
+    factor: 1.725,
   },
   {
     id: 'extra',
     title: 'Extra active',
     description: 'Very hard exercise or physical job every day.',
+    factor: 1.9,
   },
 ];
 
 export default function ActivityScreen() {
   const router = useRouter();
+  const { setData } = useOnboarding();
   const [selected, setSelected] = useState<string | null>(null);
+
+  function handleContinue() {
+    if (!selected) return;
+    setData({ activityLevel: selected });
+    router.push('/onboarding/goal');
+  }
 
   return (
     <View style={styles.container}>
-
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <Text style={styles.backText}>← Back</Text>
       </TouchableOpacity>
@@ -62,14 +74,13 @@ export default function ActivityScreen() {
       <View style={styles.bottom}>
         <TouchableOpacity
           style={[styles.continueButton, !selected && styles.buttonDisabled]}
-          onPress={() => selected && router.push('/onboarding/goal')}
+          onPress={handleContinue}
         >
           <Text style={styles.continueText}>CONTINUE</Text>
         </TouchableOpacity>
 
         <Text style={styles.footer}>Your data is private and only used to personalize your experience</Text>
       </View>
-
     </View>
   );
 }

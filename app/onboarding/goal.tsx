@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useOnboarding } from '../../lib/OnboardingContext';
 
 const goals = [
   {
@@ -27,11 +28,17 @@ const goals = [
 
 export default function GoalScreen() {
   const router = useRouter();
+  const { setData } = useOnboarding();
   const [selected, setSelected] = useState<string | null>(null);
+
+  function handleContinue() {
+    if (!selected) return;
+    setData({ goal: selected });
+    router.push('/onboarding/calculating');
+  }
 
   return (
     <View style={styles.container}>
-
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <Text style={styles.backText}>← Back</Text>
       </TouchableOpacity>
@@ -57,14 +64,13 @@ export default function GoalScreen() {
       <View style={styles.bottom}>
         <TouchableOpacity
           style={[styles.continueButton, !selected && styles.buttonDisabled]}
-          onPress={() => selected && router.push('/onboarding/calculating')}
+          onPress={handleContinue}
         >
           <Text style={styles.continueText}>CONTINUE</Text>
         </TouchableOpacity>
 
         <Text style={styles.footer}>Your data is private and only used to personalize your experience</Text>
       </View>
-
     </View>
   );
 }

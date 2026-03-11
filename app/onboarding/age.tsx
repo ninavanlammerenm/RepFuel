@@ -5,7 +5,7 @@ import { useOnboarding } from '../../lib/OnboardingContext';
 
 const days = Array.from({ length: 31 }, (_, i) => i + 1);
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const years = Array.from({ length: 80 }, (_, i) => 2007 - i);
+const years = Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i);
 
 export default function AgeScreen() {
   const router = useRouter();

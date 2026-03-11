@@ -6,32 +6,32 @@ import { useOnboarding } from '../../lib/OnboardingContext';
 const levels = [
   {
     id: 'sedentary',
-    title: 'Sedentary',
-    description: 'Little or no exercise. Mostly sitting during the day.',
+    title: 'Not very active',
+    description: 'I sit most of the day and barely exercise.',
     factor: 1.2,
   },
   {
     id: 'light',
-    title: 'Lightly active',
-    description: 'Light exercise 1–3 days per week.',
+    title: 'A little active',
+    description: 'I move around sometimes and exercise once or twice a week.',
     factor: 1.375,
   },
   {
     id: 'moderate',
-    title: 'Moderately active',
-    description: 'Moderate exercise 3–5 days per week.',
+    title: 'Pretty active',
+    description: 'I work out a few times a week.',
     factor: 1.55,
   },
   {
     id: 'active',
     title: 'Very active',
-    description: 'Hard exercise 6–7 days per week.',
+    description: 'I train hard almost every day.',
     factor: 1.725,
   },
   {
     id: 'extra',
-    title: 'Extra active',
-    description: 'Very hard exercise or physical job every day.',
+    title: 'Extremely active',
+    description: 'I train hard every single day or have a very physical job.',
     factor: 1.9,
   },
 ];

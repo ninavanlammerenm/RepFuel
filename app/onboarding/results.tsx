@@ -25,7 +25,6 @@ function calculateTargets(data: any) {
   const activityFactor = activityFactors[data.activityLevel] ?? 1.55;
   const goalAdjustment = goalAdjustments[data.goal] ?? 0;
 
-  // Leeftijd berekenen uit geboortedatum
   const birthYear = parseInt(data.birthDate.split(' ')[2]);
   const age = new Date().getFullYear() - birthYear;
 
@@ -90,6 +89,7 @@ export default function ResultsScreen() {
       daily_protein: targets.protein,
       daily_carbs: targets.carbs,
       daily_fat: targets.fat,
+      body_fat: data.bodyFat ? parseFloat(data.bodyFat) : null,
     });
 
     setLoading(false);
@@ -106,6 +106,10 @@ export default function ResultsScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Your daily{'\n'}targets</Text>
         <Text style={styles.subtitle}>Based on your data, here's what you should aim for every day:</Text>
+
+        {data.bodyFat && parseFloat(data.bodyFat) > 0 && (
+          <Text style={styles.methodNote}>✓ Calculated using Katch-McArdle (body fat %)</Text>
+        )}
 
         <View style={styles.card}>
           <Text style={styles.cardLabel}>Calories</Text>
@@ -165,7 +169,12 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: '#9CA3AF',
-    marginBottom: 32,
+    marginBottom: 16,
+  },
+  methodNote: {
+    fontSize: 13,
+    color: '#22C55E',
+    marginBottom: 20,
   },
   card: {
     backgroundColor: '#22C55E',

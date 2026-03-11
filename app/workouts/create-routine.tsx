@@ -1,6 +1,22 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Keyboard, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import {
+  Keyboard,
+  LayoutAnimation,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  UIManager,
+  View,
+} from 'react-native';
+
+if (Platform.OS === 'android') {
+  UIManager.setLayoutAnimationEnabledExperimental?.(true);
+}
 
 type Exercise = {
   id: string;
@@ -17,6 +33,7 @@ export default function CreateRoutineScreen() {
   ]);
 
   const addExercise = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExercises([...exercises, {
       id: Date.now().toString(),
       name: '',
@@ -33,6 +50,7 @@ export default function CreateRoutineScreen() {
 
   const removeExercise = (id: string) => {
     if (exercises.length > 1) {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setExercises(exercises.filter(ex => ex.id !== id));
     }
   };
@@ -43,62 +61,69 @@ export default function CreateRoutineScreen() {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
 
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text style={styles.cancelText}>Cancel</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.saveButton, !isComplete && styles.saveButtonDisabled]}
+            onPress={() => isComplete && router.back()}
+          >
+            <Text style={styles.saveButtonText}>Save</Text>
+          </TouchableOpacity>
+        </View>
 
-        <Text style={styles.title}>Create routine</Text>
+        <TextInput
+          style={styles.routineNameInput}
+          placeholder="Routine name..."
+          placeholderTextColor="#4B5563"
+          value={routineName}
+          onChangeText={setRoutineName}
+        />
 
         <ScrollView showsVerticalScrollIndicator={false}>
-
-          <Text style={styles.label}>Routine name</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g. Push Day"
-            placeholderTextColor="#9CA3AF"
-            value={routineName}
-            onChangeText={setRoutineName}
-          />
 
           <Text style={styles.sectionTitle}>Exercises</Text>
 
           {exercises.map((exercise, index) => (
             <View key={exercise.id} style={styles.exerciseCard}>
+
               <View style={styles.exerciseHeader}>
-                <Text style={styles.exerciseNumber}>Exercise {index + 1}</Text>
+                <View style={styles.exerciseNumberBadge}>
+                  <Text style={styles.exerciseNumberText}>{index + 1}</Text>
+                </View>
+                <TextInput
+                  style={styles.exerciseNameInput}
+                  placeholder="Exercise name..."
+                  placeholderTextColor="#4B5563"
+                  value={exercise.name}
+                  onChangeText={(value) => updateExercise(exercise.id, 'name', value)}
+                />
                 {exercises.length > 1 && (
                   <TouchableOpacity onPress={() => removeExercise(exercise.id)}>
-                    <Text style={styles.removeText}>Remove</Text>
+                    <Text style={styles.removeText}>✕</Text>
                   </TouchableOpacity>
                 )}
               </View>
 
-              <TextInput
-                style={styles.input}
-                placeholder="Exercise name (e.g. Bench Press)"
-                placeholderTextColor="#9CA3AF"
-                value={exercise.name}
-                onChangeText={(value) => updateExercise(exercise.id, 'name', value)}
-              />
-
               <View style={styles.row}>
                 <View style={styles.halfInput}>
-                  <Text style={styles.label}>Sets</Text>
+                  <Text style={styles.inputLabel}>Sets</Text>
                   <TextInput
                     style={styles.input}
                     placeholder="e.g. 4"
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor="#4B5563"
                     keyboardType="numeric"
                     value={exercise.sets}
                     onChangeText={(value) => updateExercise(exercise.id, 'sets', value)}
                   />
                 </View>
                 <View style={styles.halfInput}>
-                  <Text style={styles.label}>Reps</Text>
+                  <Text style={styles.inputLabel}>Reps</Text>
                   <TextInput
                     style={styles.input}
                     placeholder="e.g. 10"
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor="#4B5563"
                     keyboardType="numeric"
                     value={exercise.reps}
                     onChangeText={(value) => updateExercise(exercise.id, 'reps', value)}
@@ -109,15 +134,8 @@ export default function CreateRoutineScreen() {
             </View>
           ))}
 
-          <TouchableOpacity style={styles.addButton} onPress={addExercise}>
-            <Text style={styles.addButtonText}>+ Add exercise</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.saveButton, !isComplete && styles.buttonDisabled]}
-            onPress={() => isComplete && router.back()}
-          >
-            <Text style={styles.saveButtonText}>Save routine</Text>
+          <TouchableOpacity style={styles.addExerciseButton} onPress={addExercise}>
+            <Text style={styles.addExerciseText}>+ Add exercise</Text>
           </TouchableOpacity>
 
         </ScrollView>
@@ -130,64 +148,90 @@ export default function CreateRoutineScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111827',
-    paddingHorizontal: 24,
+    backgroundColor: '#0D1117',
+    paddingHorizontal: 20,
     paddingTop: 60,
   },
-  backButton: {
-    marginBottom: 16,
-  },
-  backText: {
-    color: '#9CA3AF',
-    fontSize: 16,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 24,
-  },
-  label: {
-    color: '#9CA3AF',
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  input: {
-    width: '100%',
-    backgroundColor: '#1F2937',
-    color: '#FFFFFF',
-    padding: 14,
-    borderRadius: 12,
-    fontSize: 16,
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 12,
-    marginTop: 8,
-  },
-  exerciseCard: {
-    backgroundColor: '#1F2937',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 12,
-  },
-  exerciseHeader: {
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 20,
   },
-  exerciseNumber: {
-    color: '#22C55E',
-    fontSize: 14,
+  cancelText: {
+    color: '#F87171',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  saveButton: {
+    backgroundColor: '#22C55E',
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+  },
+  saveButtonDisabled: {
+    backgroundColor: '#1C2333',
+    borderWidth: 1,
+    borderColor: '#2D3748',
+  },
+  saveButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
     fontWeight: 'bold',
   },
+  routineNameInput: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 28,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1C2333',
+    paddingBottom: 10,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#6B7280',
+    marginBottom: 14,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  exerciseCard: {
+    backgroundColor: '#1C2333',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#2D3748',
+  },
+  exerciseHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+    gap: 10,
+  },
+  exerciseNumberBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: '#22C55E',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  exerciseNumberText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  exerciseNameInput: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
   removeText: {
-    color: '#F87171',
-    fontSize: 14,
+    color: '#4B5563',
+    fontSize: 16,
   },
   row: {
     flexDirection: 'row',
@@ -196,32 +240,35 @@ const styles = StyleSheet.create({
   halfInput: {
     flex: 1,
   },
-  addButton: {
-    borderWidth: 2,
-    borderColor: '#374151',
+  inputLabel: {
+    color: '#4B5563',
+    fontSize: 11,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  input: {
+    backgroundColor: '#0D1117',
+    color: '#FFFFFF',
+    padding: 12,
+    borderRadius: 10,
+    fontSize: 15,
+    textAlign: 'center',
+    borderWidth: 1,
+    borderColor: '#2D3748',
+  },
+  addExerciseButton: {
+    borderWidth: 1,
+    borderColor: '#2D3748',
     borderStyle: 'dashed',
-    borderRadius: 14,
-    padding: 16,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  addButtonText: {
-    color: '#9CA3AF',
-    fontSize: 16,
-  },
-  saveButton: {
-    backgroundColor: '#22C55E',
-    paddingVertical: 16,
-    borderRadius: 14,
+    borderRadius: 16,
+    padding: 18,
     alignItems: 'center',
     marginBottom: 40,
   },
-  buttonDisabled: {
-    backgroundColor: '#6B7280',
-  },
-  saveButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
+  addExerciseText: {
+    color: '#6B7280',
+    fontSize: 15,
   },
 });

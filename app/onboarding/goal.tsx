@@ -34,7 +34,7 @@ export default function GoalScreen() {
   function handleContinue() {
     if (!selected) return;
     setData({ goal: selected });
-    router.push('/onboarding/calculating');
+    router.push('/onboarding/body-fat');
   }
 
   return (

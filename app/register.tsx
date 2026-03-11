@@ -22,11 +22,20 @@ export default function RegisterScreen() {
     }
 
     setLoading(true);
-    const { error } = await supabase.auth.signUp({ email, password });
+
+    const { error: signUpError } = await supabase.auth.signUp({ email, password });
+
+    if (signUpError) {
+      Alert.alert('Fout', signUpError.message);
+      setLoading(false);
+      return;
+    }
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
 
-    if (error) {
-      Alert.alert('Fout', error.message);
+    if (signInError) {
+      Alert.alert('Fout', signInError.message);
     } else {
       router.push('/onboarding/welcome');
     }

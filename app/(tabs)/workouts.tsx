@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type Workout = {
   id: string;
@@ -10,11 +10,11 @@ type Workout = {
   duration_seconds: number;
 };
 
-const routines = [
-  { id: '1', name: 'Push Day', exercises: 5, color: '#22C55E' },
-  { id: '2', name: 'Pull Day', exercises: 6, color: '#22C55E' },
-  { id: '3', name: 'Leg Day', exercises: 6, color: '#22C55E' },
-];
+type Routine = {
+  id: string;
+  name: string;
+  exercise_count: number;
+};
 
 const personalRecords = [
   { exercise: 'Bench Press', weight: '100 kg', date: 'Feb 2026' },
@@ -25,10 +25,12 @@ const personalRecords = [
 export default function WorkoutsScreen() {
   const router = useRouter();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [routines, setRoutines] = useState<Routine[]>([]);
 
   useFocusEffect(
     useCallback(() => {
       fetchWorkouts();
+      fetchRoutines();
     }, [])
   );
 
@@ -45,6 +47,53 @@ export default function WorkoutsScreen() {
     }
 
     setWorkouts(data || []);
+  };
+
+  const fetchRoutines = async () => {
+    const { data, error } = await supabase
+      .from('routines')
+      .select('id, name, routine_exercises(count)')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching routines:', error);
+      return;
+    }
+
+    const formatted = (data || []).map((r: any) => ({
+      id: r.id,
+      name: r.name,
+      exercise_count: r.routine_exercises?.[0]?.count || 0,
+    }));
+
+    setRoutines(formatted);
+  };
+
+  const deleteRoutine = (routine: Routine) => {
+    Alert.alert(
+      'Delete routine',
+      `Are you sure you want to delete "${routine.name}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            const { error } = await supabase
+              .from('routines')
+              .delete()
+              .eq('id', routine.id);
+
+            if (error) {
+              console.error('Error deleting routine:', error);
+              return;
+            }
+
+            setRoutines(routines.filter(r => r.id !== routine.id));
+          },
+        },
+      ]
+    );
   };
 
   const formatDate = (dateString: string) => {
@@ -80,17 +129,34 @@ export default function WorkoutsScreen() {
         </View>
 
         <Text style={styles.sectionTitle}>My routines</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.routineScroll}>
-          {routines.map((routine) => (
-            <TouchableOpacity key={routine.id} style={[styles.routineCard, { borderTopColor: routine.color, borderTopWidth: 3 }]}>
-              <Text style={styles.routineCardName}>{routine.name}</Text>
-              <Text style={styles.routineCardMeta}>{routine.exercises} exercises</Text>
-              <View style={[styles.startRoutineButton, { backgroundColor: routine.color }]}>
-                <Text style={styles.startRoutineText}>Start</Text>
+
+        {routines.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyText}>No routines yet</Text>
+            <Text style={styles.emptySubText}>Create your first routine! 💪</Text>
+          </View>
+        ) : (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.routineScroll}>
+            {routines.map((routine) => (
+              <View key={routine.id} style={styles.routineCard}>
+                <TouchableOpacity
+                  style={styles.deleteRoutineButton}
+                  onPress={() => deleteRoutine(routine)}
+                >
+                  <Text style={styles.deleteRoutineText}>✕</Text>
+                </TouchableOpacity>
+                <Text style={styles.routineCardName}>{routine.name}</Text>
+                <Text style={styles.routineCardMeta}>{routine.exercise_count} exercises</Text>
+                <TouchableOpacity
+                  style={styles.startRoutineButton}
+                  onPress={() => router.push(`/workouts/active-workout?routineId=${routine.id}`)}
+                >
+                  <Text style={styles.startRoutineText}>Start</Text>
+                </TouchableOpacity>
               </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+            ))}
+          </ScrollView>
+        )}
 
         <Text style={styles.sectionTitle}>Recent workouts</Text>
 
@@ -199,12 +265,29 @@ const styles = StyleSheet.create({
     width: 140,
     borderWidth: 1,
     borderColor: '#2D3748',
+    borderTopColor: '#22C55E',
+    borderTopWidth: 3,
+  },
+  deleteRoutineButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteRoutineText: {
+    color: '#4B5563',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   routineCardName: {
     fontSize: 15,
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginBottom: 4,
+    marginTop: 20,
   },
   routineCardMeta: {
     fontSize: 12,
@@ -212,6 +295,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   startRoutineButton: {
+    backgroundColor: '#22C55E',
     borderRadius: 8,
     paddingVertical: 6,
     alignItems: 'center',
@@ -259,7 +343,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1C2333',
     borderRadius: 16,
     padding: 32,
-    marginBottom: 10,
+    marginBottom: 24,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#2D3748',

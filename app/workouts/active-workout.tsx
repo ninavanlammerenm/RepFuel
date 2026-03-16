@@ -45,10 +45,6 @@ const MUSCLE_GROUPS = [
   'All', 'Chest', 'Back', 'Legs', 'Shoulders', 'Biceps', 'Triceps', 'Core', 'Cardio', 'Custom'
 ];
 
-const CATEGORY_OPTIONS = [
-  'Chest', 'Back', 'Legs', 'Shoulders', 'Biceps', 'Triceps', 'Core', 'Cardio'
-];
-
 export default function ActiveWorkoutScreen() {
   const router = useRouter();
   const { routineId } = useLocalSearchParams();
@@ -58,18 +54,14 @@ export default function ActiveWorkoutScreen() {
   const [timerActive, setTimerActive] = useState(false);
   const [showTimer, setShowTimer] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
-  const [showCreateOwn, setShowCreateOwn] = useState(false);
   const [customTime, setCustomTime] = useState('');
   const [startTime] = useState(Date.now());
   const [libraryExercises, setLibraryExercises] = useState<LibraryExercise[]>([]);
   const [search, setSearch] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('All');
-  const [newExerciseName, setNewExerciseName] = useState('');
-  const [newExerciseCategory, setNewExerciseCategory] = useState('');
   const intervalRef = useRef<any>(null);
   const slideAnim = useRef(new Animated.Value(300)).current;
   const pickerAnim = useRef(new Animated.Value(800)).current;
-  const createOwnAnim = useRef(new Animated.Value(800)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -82,12 +74,9 @@ export default function ActiveWorkoutScreen() {
   }, []);
 
   const fetchLibraryExercises = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
     const { data, error } = await supabase
       .from('exercises')
       .select('*')
-      .or(`user_id.is.null,user_id.eq.${user.id}`)
       .order('name', { ascending: true });
     if (!error && data) setLibraryExercises(data);
   };
@@ -96,6 +85,7 @@ export default function ActiveWorkoutScreen() {
     const { data: routine } = await supabase
       .from('routines').select('name').eq('id', id).single();
     if (routine) setWorkoutName(routine.name);
+
     const { data: routineExercises } = await supabase
       .from('routine_exercises').select('*').eq('routine_id', id);
     if (routineExercises) {
@@ -144,20 +134,6 @@ export default function ActiveWorkoutScreen() {
       });
   };
 
-  const openCreateOwn = () => {
-    setShowCreateOwn(true);
-    Animated.spring(createOwnAnim, { toValue: 0, useNativeDriver: true, bounciness: 4 }).start();
-  };
-
-  const closeCreateOwn = () => {
-    Animated.timing(createOwnAnim, { toValue: 800, duration: 300, useNativeDriver: true })
-      .start(() => {
-        setShowCreateOwn(false);
-        setNewExerciseName('');
-        setNewExerciseCategory('');
-      });
-  };
-
   const handleSelectExercise = (exercise: LibraryExercise) => {
     closePicker();
     const newOpacity = new Animated.Value(0);
@@ -170,29 +146,6 @@ export default function ActiveWorkoutScreen() {
       }]);
       Animated.timing(newOpacity, { toValue: 1, duration: 400, useNativeDriver: true }).start();
     }, 300);
-  };
-
-  const saveCustomExercise = async () => {
-    if (!newExerciseName.trim()) return;
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from('exercises')
-      .insert({
-        name: newExerciseName.trim(),
-        muscle_group: newExerciseCategory || 'Custom',
-        category: 'Custom',
-        user_id: user.id,
-      })
-      .select()
-      .single();
-
-    if (error || !data) return;
-
-    setLibraryExercises(prev => [...prev, data]);
-    closeCreateOwn();
-    setTimeout(() => handleSelectExercise(data), 350);
   };
 
   const startTimer = (seconds: number) => {
@@ -395,8 +348,14 @@ export default function ActiveWorkoutScreen() {
               </TouchableOpacity>
               <Text style={styles.pickerTitle}>Add Exercise</Text>
 
-              <TouchableOpacity style={styles.createOwnButton} onPress={openCreateOwn}>
-                <Text style={styles.createOwnText}>+ Create your own exercise</Text>
+              <TouchableOpacity
+                style={styles.createOwnButton}
+                onPress={() => {
+                  closePicker();
+                  setTimeout(() => router.push('/workouts/create-exercise'), 350);
+                }}
+              >
+                <Text style={styles.createOwnButtonText}>+ Create your own exercise</Text>
               </TouchableOpacity>
 
               <TextInput
@@ -443,59 +402,6 @@ export default function ActiveWorkoutScreen() {
                   </Pressable>
                 ))}
               </ScrollView>
-            </Animated.View>
-          </View>
-        </Modal>
-      )}
-
-      {/* Create Own Exercise Modal */}
-      {showCreateOwn && (
-        <Modal transparent animationType="none" onRequestClose={closeCreateOwn}>
-          <View style={styles.modalWrapper}>
-            <Pressable style={styles.overlay} onPress={closeCreateOwn} />
-            <Animated.View style={[styles.createOwnSheet, { transform: [{ translateY: createOwnAnim }] }]}>
-              <View style={styles.createOwnHeader}>
-                <TouchableOpacity onPress={closeCreateOwn}>
-                  <Text style={styles.createOwnCancel}>Cancel</Text>
-                </TouchableOpacity>
-                <Text style={styles.createOwnTitle}>New Exercise</Text>
-                <TouchableOpacity onPress={saveCustomExercise}>
-                  <Text style={styles.createOwnSaveBtn}>Save</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.createOwnFormCard}>
-                <TextInput
-                  style={styles.createOwnNameInput}
-                  placeholder="Name"
-                  placeholderTextColor="#4B5563"
-                  value={newExerciseName}
-                  onChangeText={setNewExerciseName}
-                  autoFocus
-                />
-                <View style={styles.createOwnDivider} />
-                <Text style={styles.createOwnCategoryLabel}>Category</Text>
-              </View>
-
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.categoryScroll}
-                contentContainerStyle={styles.categoryContent}
-              >
-                {CATEGORY_OPTIONS.map((cat) => (
-                  <TouchableOpacity
-                    key={cat}
-                    style={[styles.categoryPill, newExerciseCategory === cat && styles.categoryPillActive]}
-                    onPress={() => setNewExerciseCategory(newExerciseCategory === cat ? '' : cat)}
-                  >
-                    <Text style={[styles.categoryPillText, newExerciseCategory === cat && styles.categoryPillTextActive]}>
-                      {cat}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-
             </Animated.View>
           </View>
         </Modal>
@@ -585,7 +491,7 @@ const styles = StyleSheet.create({
   dragHandle: { width: 40, height: 4, backgroundColor: '#2D3748', borderRadius: 2 },
   pickerTitle: { fontSize: 18, fontWeight: 'bold', color: '#FFFFFF', textAlign: 'center', marginBottom: 16 },
   createOwnButton: { backgroundColor: '#0D1117', borderRadius: 12, padding: 14, alignItems: 'center', marginBottom: 12, borderWidth: 1, borderColor: '#22C55E' },
-  createOwnText: { color: '#22C55E', fontSize: 14, fontWeight: '600' },
+  createOwnButtonText: { color: '#22C55E', fontSize: 14, fontWeight: '600' },
   searchInput: { backgroundColor: '#0D1117', borderRadius: 12, padding: 14, color: '#FFFFFF', fontSize: 15, borderWidth: 1, borderColor: '#2D3748', marginBottom: 12 },
   groupScroll: { marginBottom: 12, flexGrow: 0, flexShrink: 0 },
   groupContent: { gap: 8, paddingRight: 20 },
@@ -600,21 +506,6 @@ const styles = StyleSheet.create({
   exerciseRowMeta: { fontSize: 12, color: '#6B7280' },
   exerciseRowPlusBadge: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#0D1117', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#2D3748' },
   exerciseRowPlus: { color: '#22C55E', fontSize: 18, fontWeight: 'bold' },
-  createOwnSheet: { height: '60%', backgroundColor: '#1C2333', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40, borderTopWidth: 1, borderColor: '#2D3748' },
-  createOwnHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-  createOwnCancel: { color: '#F87171', fontSize: 15, fontWeight: '600' },
-  createOwnTitle: { fontSize: 18, fontWeight: 'bold', color: '#FFFFFF' },
-  createOwnSaveBtn: { color: '#22C55E', fontSize: 15, fontWeight: 'bold' },
-  createOwnFormCard: { backgroundColor: '#0D1117', borderRadius: 16, paddingHorizontal: 16, marginBottom: 20, borderWidth: 1, borderColor: '#2D3748' },
-  createOwnNameInput: { color: '#FFFFFF', fontSize: 16, paddingVertical: 16 },
-  createOwnDivider: { height: 1, backgroundColor: '#2D3748' },
-  createOwnCategoryLabel: { color: '#6B7280', fontSize: 14, paddingVertical: 16 },
-  categoryScroll: { flexGrow: 0, flexShrink: 0 },
-  categoryContent: { gap: 8, paddingRight: 20 },
-  categoryPill: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, backgroundColor: '#0D1117', borderWidth: 1, borderColor: '#2D3748', alignSelf: 'flex-start', height: 38, justifyContent: 'center' },
-  categoryPillActive: { backgroundColor: '#22C55E', borderColor: '#22C55E' },
-  categoryPillText: { color: '#6B7280', fontSize: 13, fontWeight: '600' },
-  categoryPillTextActive: { color: '#FFFFFF' },
   bottomSheet: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#1C2333', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 48, borderTopWidth: 1, borderColor: '#2D3748' },
   timerTitle: { fontSize: 14, color: '#6B7280', textAlign: 'center', marginBottom: 8, letterSpacing: 1, textTransform: 'uppercase' },
   timerDisplay: { fontSize: 72, fontWeight: 'bold', color: '#22C55E', textAlign: 'center', marginBottom: 24, letterSpacing: 2 },

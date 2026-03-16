@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
-import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Animated,
@@ -35,7 +35,7 @@ type LibraryExercise = {
 };
 
 const MUSCLE_GROUPS = [
-  'All', 'Chest', 'Back', 'Legs', 'Shoulders', 'Biceps', 'Triceps', 'Core', 'Cardio'
+  'All', 'Chest', 'Back', 'Legs', 'Shoulders', 'Biceps', 'Triceps', 'Core', 'Cardio', 'Custom'
 ];
 
 export default function CreateRoutineScreen() {
@@ -52,6 +52,13 @@ export default function CreateRoutineScreen() {
   useEffect(() => {
     fetchLibraryExercises();
   }, []);
+
+  // Refresh library als je terugkomt van create-exercise
+  useFocusEffect(
+    useCallback(() => {
+      fetchLibraryExercises();
+    }, [])
+  );
 
   const fetchLibraryExercises = async () => {
     const { data, error } = await supabase
@@ -86,13 +93,12 @@ export default function CreateRoutineScreen() {
     closePicker();
     const newOpacity = new Animated.Value(0);
     setTimeout(() => {
-      const newExercise: Exercise = {
+      setExercises(prev => [...prev, {
         id: Date.now().toString(),
         name: exercise.name,
         sets: '3',
         opacity: newOpacity,
-      };
-      setExercises(prev => [...prev, newExercise]);
+      }]);
       Animated.timing(newOpacity, {
         toValue: 1,
         duration: 400,
@@ -222,7 +228,19 @@ export default function CreateRoutineScreen() {
               <TouchableOpacity onPress={closePicker} style={styles.dragHandleWrapper}>
                 <View style={styles.dragHandle} />
               </TouchableOpacity>
+
               <Text style={styles.pickerTitle}>Add Exercise</Text>
+
+              <TouchableOpacity
+                style={styles.createOwnButton}
+                onPress={() => {
+                  closePicker();
+                  setTimeout(() => router.push('/workouts/create-exercise?from=routine'), 350);
+                }}
+              >
+                <Text style={styles.createOwnButtonText}>+ Create your own exercise</Text>
+              </TouchableOpacity>
+
               <TextInput
                 style={styles.searchInput}
                 placeholder="Search exercises..."
@@ -230,6 +248,7 @@ export default function CreateRoutineScreen() {
                 value={search}
                 onChangeText={setSearch}
               />
+
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -248,6 +267,7 @@ export default function CreateRoutineScreen() {
                   </TouchableOpacity>
                 ))}
               </ScrollView>
+
               <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                 {filteredExercises.map((item) => (
                   <Pressable
@@ -299,6 +319,8 @@ const styles = StyleSheet.create({
   dragHandleWrapper: { alignItems: 'center', marginBottom: 20 },
   dragHandle: { width: 40, height: 4, backgroundColor: '#2D3748', borderRadius: 2 },
   pickerTitle: { fontSize: 18, fontWeight: 'bold', color: '#FFFFFF', textAlign: 'center', marginBottom: 16 },
+  createOwnButton: { backgroundColor: '#0D1117', borderRadius: 12, padding: 14, alignItems: 'center', marginBottom: 12, borderWidth: 1, borderColor: '#22C55E' },
+  createOwnButtonText: { color: '#22C55E', fontSize: 14, fontWeight: '600' },
   searchInput: { backgroundColor: '#0D1117', borderRadius: 12, padding: 14, color: '#FFFFFF', fontSize: 15, borderWidth: 1, borderColor: '#2D3748', marginBottom: 12 },
   groupScroll: { marginBottom: 12, flexGrow: 0, flexShrink: 0 },
   groupContent: { gap: 8, paddingRight: 20 },

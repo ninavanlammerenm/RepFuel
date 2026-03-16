@@ -16,11 +16,6 @@ type Routine = {
   exercise_count: number;
 };
 
-const personalRecords = [
-  { exercise: 'Bench Press', weight: '100 kg', date: 'Feb 2026' },
-  { exercise: 'Squat', weight: '140 kg', date: 'Jan 2026' },
-  { exercise: 'Deadlift', weight: '160 kg', date: 'Mar 2026' },
-];
 
 export default function WorkoutsScreen() {
   const router = useRouter();
@@ -183,20 +178,6 @@ export default function WorkoutsScreen() {
             </TouchableOpacity>
           ))
         )}
-
-        <Text style={styles.sectionTitle}>Personal records 🏆</Text>
-
-        {personalRecords.map((pr) => (
-          <View key={pr.exercise} style={styles.prCard}>
-            <View style={styles.prLeft}>
-              <Text style={styles.prExercise}>{pr.exercise}</Text>
-              <Text style={styles.prDate}>{pr.date}</Text>
-            </View>
-            <View style={styles.prBadge}>
-              <Text style={styles.prWeight}>{pr.weight}</Text>
-            </View>
-          </View>
-        ))}
 
       </ScrollView>
     </View>

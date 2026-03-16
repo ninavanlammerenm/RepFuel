@@ -25,6 +25,10 @@ type Set = {
   weight: string;
   reps: string;
   done: boolean;
+  lastWeight?: string;
+  lastReps?: string;
+  slideAnim: Animated.Value;
+  fadeAnim: Animated.Value;
 };
 
 type Exercise = {
@@ -44,6 +48,34 @@ type LibraryExercise = {
 const MUSCLE_GROUPS = [
   'All', 'Chest', 'Back', 'Legs', 'Shoulders', 'Biceps', 'Triceps', 'Core', 'Cardio', 'Custom'
 ];
+
+const createAnimatedSet = (
+  id: string,
+  lastWeight = '',
+  lastReps = '',
+  animateIn = true
+): Set => {
+  const slideAnim = new Animated.Value(animateIn ? 60 : 0);
+  const fadeAnim = new Animated.Value(animateIn ? 0 : 1);
+
+  if (animateIn) {
+    Animated.parallel([
+      Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true, bounciness: 6 }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }),
+    ]).start();
+  }
+
+  return {
+    id,
+    weight: '',
+    reps: '',
+    done: false,
+    lastWeight,
+    lastReps,
+    slideAnim,
+    fadeAnim,
+  };
+};
 
 export default function ActiveWorkoutScreen() {
   const router = useRouter();
@@ -73,6 +105,25 @@ export default function ActiveWorkoutScreen() {
     }
   }, []);
 
+  const fetchLastSets = async (exerciseName: string): Promise<{ weight: string; reps: string }[]> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const { data: lastWorkout } = await supabase
+      .from('workout_exercises')
+      .select('weight, reps')
+      .eq('name', exerciseName)
+      .order('workout_id', { ascending: false })
+      .limit(10);
+
+    if (!lastWorkout || lastWorkout.length === 0) return [];
+
+    return lastWorkout.map(s => ({
+      weight: s.weight > 0 ? String(s.weight) : '',
+      reps: s.reps > 0 ? String(s.reps) : '',
+    }));
+  };
+
   const fetchLibraryExercises = async () => {
     const { data, error } = await supabase
       .from('exercises')
@@ -93,9 +144,9 @@ export default function ActiveWorkoutScreen() {
         id: Date.now().toString() + ex.id,
         name: ex.name,
         opacity: new Animated.Value(1),
-        sets: Array.from({ length: ex.sets }, (_, i) => ({
-          id: `${ex.id}-${i}`, weight: '', reps: String(ex.reps), done: false,
-        })),
+        sets: Array.from({ length: ex.sets }, (_, i) =>
+          createAnimatedSet(`${ex.id}-${i}`, '', String(ex.reps), false)
+        ),
       }));
       setExercises(loaded);
       Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
@@ -134,15 +185,20 @@ export default function ActiveWorkoutScreen() {
       });
   };
 
-  const handleSelectExercise = (exercise: LibraryExercise) => {
+  const handleSelectExercise = async (exercise: LibraryExercise) => {
     closePicker();
+    const lastSets = await fetchLastSets(exercise.name);
     const newOpacity = new Animated.Value(0);
     setTimeout(() => {
       setExercises(prev => [...prev, {
         id: Date.now().toString(),
         name: exercise.name,
         opacity: newOpacity,
-        sets: [{ id: Date.now().toString(), weight: '', reps: '', done: false }],
+        sets: lastSets.length > 0
+          ? lastSets.map((s, i) =>
+              createAnimatedSet(Date.now().toString() + i, s.weight, s.reps, false)
+            )
+          : [createAnimatedSet(Date.now().toString(), '', '', false)],
       }]);
       Animated.timing(newOpacity, { toValue: 1, duration: 400, useNativeDriver: true }).start();
     }, 300);
@@ -174,11 +230,38 @@ export default function ActiveWorkoutScreen() {
   };
 
   const addSet = (exerciseId: string) => {
-    setExercises(exercises.map(ex =>
-      ex.id === exerciseId
-        ? { ...ex, sets: [...ex.sets, { id: Date.now().toString(), weight: '', reps: '', done: false }] }
-        : ex
-    ));
+    setExercises(prev => prev.map(ex => {
+      if (ex.id !== exerciseId) return ex;
+      const lastData = ex.sets[ex.sets.length - 1];
+      const newSet = createAnimatedSet(
+        Date.now().toString(),
+        lastData?.lastWeight || '',
+        lastData?.lastReps || '',
+        true
+      );
+      return { ...ex, sets: [...ex.sets, newSet] };
+    }));
+  };
+
+  const removeSet = (exerciseId: string, setId: string) => {
+    setExercises(prev => prev.map(ex => {
+      if (ex.id !== exerciseId) return ex;
+      const setToRemove = ex.sets.find(s => s.id === setId);
+      if (!setToRemove) return ex;
+
+      Animated.parallel([
+        Animated.timing(setToRemove.slideAnim, { toValue: -60, duration: 200, useNativeDriver: true }),
+        Animated.timing(setToRemove.fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+      ]).start(() => {
+        setExercises(prev2 => prev2.map(ex2 =>
+          ex2.id === exerciseId
+            ? { ...ex2, sets: ex2.sets.filter(s => s.id !== setId) }
+            : ex2
+        ));
+      });
+
+      return ex;
+    }));
   };
 
   const updateSet = (exerciseId: string, setId: string, field: 'weight' | 'reps', value: string) => {
@@ -298,11 +381,21 @@ export default function ActiveWorkoutScreen() {
               </View>
 
               {exercise.sets.map((set, index) => (
-                <View key={set.id} style={[styles.setRow, set.done && styles.setRowDone]}>
+                <Animated.View
+                  key={set.id}
+                  style={[
+                    styles.setRow,
+                    set.done && styles.setRowDone,
+                    {
+                      opacity: set.fadeAnim,
+                      transform: [{ translateX: set.slideAnim }],
+                    },
+                  ]}
+                >
                   <Text style={[styles.setNumber, { flex: 0.5 }]}>{index + 1}</Text>
                   <TextInput
                     style={styles.setInput}
-                    placeholder="0"
+                    placeholder={set.lastWeight || '0'}
                     placeholderTextColor="#4B5563"
                     keyboardType="numeric"
                     value={set.weight}
@@ -310,7 +403,7 @@ export default function ActiveWorkoutScreen() {
                   />
                   <TextInput
                     style={styles.setInput}
-                    placeholder="0"
+                    placeholder={set.lastReps || '0'}
                     placeholderTextColor="#4B5563"
                     keyboardType="numeric"
                     value={set.reps}
@@ -322,12 +415,22 @@ export default function ActiveWorkoutScreen() {
                   >
                     <Text style={styles.checkText}>✓</Text>
                   </TouchableOpacity>
-                </View>
+                </Animated.View>
               ))}
 
-              <TouchableOpacity style={styles.addSetButton} onPress={() => addSet(exercise.id)}>
-                <Text style={styles.addSetText}>+ Add set</Text>
-              </TouchableOpacity>
+              <View style={styles.setActionRow}>
+                <TouchableOpacity style={styles.addSetButton} onPress={() => addSet(exercise.id)}>
+                  <Text style={styles.addSetText}>+ Add set</Text>
+                </TouchableOpacity>
+                {exercise.sets.length > 1 && (
+                  <TouchableOpacity
+                    style={styles.removeSetButton}
+                    onPress={() => removeSet(exercise.id, exercise.sets[exercise.sets.length - 1].id)}
+                  >
+                    <Text style={styles.removeSetText}>- Remove set</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </Animated.View>
           ))}
 
@@ -480,8 +583,11 @@ const styles = StyleSheet.create({
   checkButton: { flex: 1, backgroundColor: '#0D1117', padding: 8, borderRadius: 8, alignItems: 'center', marginHorizontal: 4, borderWidth: 1, borderColor: '#2D3748' },
   checkButtonDone: { backgroundColor: '#22C55E', borderColor: '#22C55E' },
   checkText: { color: '#FFFFFF', fontSize: 15, fontWeight: 'bold' },
-  addSetButton: { marginTop: 8, alignItems: 'center', paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: '#2D3748', borderStyle: 'dashed' },
+  setActionRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
+  addSetButton: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: '#2D3748', borderStyle: 'dashed' },
   addSetText: { color: '#6B7280', fontSize: 13 },
+  removeSetButton: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: '#F87171', borderStyle: 'dashed' },
+  removeSetText: { color: '#F87171', fontSize: 13 },
   addExerciseButton: { borderWidth: 1, borderColor: '#2D3748', borderStyle: 'dashed', borderRadius: 16, padding: 18, alignItems: 'center', marginBottom: 40 },
   addExerciseText: { color: '#6B7280', fontSize: 15 },
   modalWrapper: { flex: 1, justifyContent: 'flex-end' },

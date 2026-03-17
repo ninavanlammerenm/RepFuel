@@ -16,7 +16,6 @@ type Routine = {
   exercise_count: number;
 };
 
-
 export default function WorkoutsScreen() {
   const router = useRouter();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -142,12 +141,20 @@ export default function WorkoutsScreen() {
                 </TouchableOpacity>
                 <Text style={styles.routineCardName}>{routine.name}</Text>
                 <Text style={styles.routineCardMeta}>{routine.exercise_count} exercises</Text>
-                <TouchableOpacity
-                  style={styles.startRoutineButton}
-                  onPress={() => router.push(`/workouts/active-workout?routineId=${routine.id}`)}
-                >
-                  <Text style={styles.startRoutineText}>Start</Text>
-                </TouchableOpacity>
+                <View style={styles.routineCardButtons}>
+                  <TouchableOpacity
+                    style={styles.editRoutineButton}
+                    onPress={() => router.push(`/workouts/edit-routine?id=${routine.id}` as any)}
+                  >
+                    <Text style={styles.editRoutineText}>Edit</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.startRoutineButton}
+                    onPress={() => router.push(`/workouts/active-workout?routineId=${routine.id}`)}
+                  >
+                    <Text style={styles.startRoutineText}>Start</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             ))}
           </ScrollView>
@@ -243,7 +250,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     marginRight: 12,
-    width: 140,
+    width: 150,
     borderWidth: 1,
     borderColor: '#2D3748',
     borderTopColor: '#22C55E',
@@ -275,7 +282,26 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     marginBottom: 16,
   },
+  routineCardButtons: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  editRoutineButton: {
+    flex: 1,
+    backgroundColor: '#0D1117',
+    borderRadius: 8,
+    paddingVertical: 6,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#2D3748',
+  },
+  editRoutineText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
   startRoutineButton: {
+    flex: 1,
     backgroundColor: '#22C55E',
     borderRadius: 8,
     paddingVertical: 6,
@@ -338,42 +364,5 @@ const styles = StyleSheet.create({
   emptySubText: {
     color: '#6B7280',
     fontSize: 14,
-  },
-  prCard: {
-    backgroundColor: '#1C2333',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: '#2D3748',
-  },
-  prLeft: {
-    flex: 1,
-  },
-  prExercise: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  prDate: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  prBadge: {
-    backgroundColor: '#0D1117',
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#22C55E',
-  },
-  prWeight: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#22C55E',
   },
 });
